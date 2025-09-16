@@ -5,23 +5,29 @@
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>TinyURLish</title>
   <style>
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Helvetica,Arial,sans-serif;max-width:700px;margin:40px auto;padding:0 16px}
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Helvetica,Arial,sans-serif;max-width:720px;margin:40px auto;padding:0 16px}
     h1{margin:0 0 8px}
-    form{display:flex;gap:8px;margin:16px 0}
-    input[type="url"]{flex:1;padding:10px;border:1px solid #ccc;border-radius:8px}
+    .row{display:flex;gap:8px;margin:12px 0;flex-wrap:wrap}
+    input[type="url"],input[type="text"]{flex:1;padding:10px;border:1px solid #ccc;border-radius:8px;min-width:200px}
     button{padding:10px 14px;border:0;border-radius:8px;cursor:pointer}
     .primary{background:#111;color:#fff}
     .card{background:#f7f7f7;border:1px solid #e5e5e5;border-radius:12px;padding:14px;margin-top:16px}
     code{background:#eee;padding:2px 6px;border-radius:6px}
+    .muted{color:#666}
   </style>
 </head>
 <body>
   <h1>🔗 TinyURLish</h1>
-  <p>Shorten a link locally. This calls <code>POST /shorten</code> and shows your short code.</p>
+  <p class="muted">Shorten a link locally. You can provide a custom code or let the app generate one.</p>
 
   <form id="f">
-    <input id="u" type="url" placeholder="Enter a URL (e.g., example.com or https://example.com)" required />
-    <button class="primary" type="submit">Shorten</button>
+    <div class="row">
+      <input id="u" type="url" placeholder="Enter a URL (e.g., https://example.com)" required />
+    </div>
+    <div class="row">
+      <input id="c" type="text" placeholder="Optional custom code (letters, numbers, _ or -)" />
+      <button class="primary" type="submit">Shorten</button>
+    </div>
   </form>
 
   <div id="out" class="card" style="display:none;"></div>
@@ -29,15 +35,19 @@
   <script>
     const f = document.getElementById('f');
     const u = document.getElementById('u');
+    const c = document.getElementById('c');
     const out = document.getElementById('out');
 
     f.addEventListener('submit', async (e) => {
       e.preventDefault();
       out.style.display = 'none';
+      const payload = { url: u.value };
+      if (c.value.trim()) payload.code = c.value.trim();
+
       const resp = await fetch('/shorten', {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ url: u.value })
+        body: JSON.stringify(payload)
       });
       const data = await resp.json();
       if (!resp.ok) {
@@ -48,10 +58,12 @@
       const base = window.location.origin;
       const shortUrl = `${base}/${data.code}`;
       out.innerHTML = `
-        <div><strong>Short code:</strong> <code>${data.code}</code></div>
-        <div style="margin-top:6px;"><a href="${shortUrl}" target="_blank" rel="noopener">Open ${shortUrl}</a></div>
-        <div style="margin-top:6px;">
+        <div><strong>Short URL:</strong> <a href="${shortUrl}" target="_blank" rel="noopener">${shortUrl}</a></div>
+        <div class="muted" style="margin-top:6px;">Destination: <code>${data.url}</code></div>
+        <div style="margin-top:10px;">
           <button id="copy">Copy URL</button>
+          <a href="/admin/recent" target="_blank" style="margin-left:6px;">Recent</a>
+          <a href="/admin/stats" target="_blank" style="margin-left:6px;">Stats</a>
         </div>`;
       out.style.display = 'block';
       document.getElementById('copy').onclick = async () => {
