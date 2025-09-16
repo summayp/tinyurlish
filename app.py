@@ -56,3 +56,12 @@ def recent():
         cur = con.execute("SELECT code,url,created_at FROM urls ORDER BY id DESC LIMIT 20")
         rows = [{"code":c, "url":u, "created_at":ts} for (c,u,ts) in cur.fetchall()]
     return jsonify(rows)
+
+@app.get("/")
+def home():
+    return jsonify({"ok": True, "message": "Use POST /shorten, GET /<code>, GET /admin/recent"})
+
+from flask import render_template
+@app.get("/ui")
+def ui():
+    return render_template("index.html")
