@@ -1,13 +1,17 @@
-import json, os, tempfile, shutil
+import os, tempfile, uuid
 import app as tiny
 
 def setup_function(_):
-    # swap DB for a temporary file
-    tiny.DB_PATH = os.path.join(tempfile.gettempdir(), "tiny_test.db")
-    if os.path.exists(tiny.DB_PATH):
-        os.remove(tiny.DB_PATH)
+    # use a unique temp DB per test session to avoid Windows file locks
+    tiny.DB_PATH = os.path.join(tempfile.gettempdir(), f"tiny_test_{uuid.uuid4().hex}.db")
     tiny.init_db()
     tiny.app.config.update(TESTING=True)
+
+def teardown_function(_):
+    try:
+        os.remove(tiny.DB_PATH)
+    except Exception:
+        pass
 
 def test_shorten_and_follow():
     client = tiny.app.test_client()
